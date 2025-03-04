@@ -297,12 +297,14 @@ class BaselineAgent(ArtificialBrain):
 
             if Phase.FOLLOW_PATH_TO_ROOM == self._phase:
                 # Check if the previously identified target victim was rescued by the human
+                # TODO: Think about changing trust
                 if self._goal_vic and self._goal_vic in self._collected_victims:
                     # Reset current door and switch to finding the next goal
                     self._current_door = None
                     self._phase = Phase.FIND_NEXT_GOAL
 
                 # Check if the human found the previously identified target victim in a different room
+                # TODO: Think about changing trust
                 if self._goal_vic \
                         and self._goal_vic in self._found_victims \
                         and self._door['room_name'] != self._found_victim_logs[self._goal_vic]['room']:
@@ -310,12 +312,14 @@ class BaselineAgent(ArtificialBrain):
                     self._phase = Phase.FIND_NEXT_GOAL
 
                 # Check if the human already searched the previously identified area without finding the target victim
+                # TODO: Think about changing trust
                 if self._door['room_name'] in self._searched_rooms and self._goal_vic not in self._found_victims:
                     self._current_door = None
                     self._phase = Phase.FIND_NEXT_GOAL
 
                 # Move to the next area to search
                 else:
+                    # TODO: Think about changing trust
                     # Update the state tracker with the current state
                     self._state_tracker.update(state)
 
@@ -503,23 +507,27 @@ class BaselineAgent(ArtificialBrain):
                 self._answered = False
 
                 # Check if the target victim has been rescued by the human, and switch to finding the next goal
+                # TODO: Think about changing trust
                 if self._goal_vic in self._collected_victims:
                     self._current_door = None
                     self._phase = Phase.FIND_NEXT_GOAL
 
                 # Check if the target victim is found in a different area, and start moving there
+                # TODO: Think about changing trust
                 if self._goal_vic in self._found_victims \
                         and self._door['room_name'] != self._found_victim_logs[self._goal_vic]['room']:
                     self._current_door = None
                     self._phase = Phase.FIND_NEXT_GOAL
 
                 # Check if area already searched without finding the target victim, and plan to search another area
+                # TODO: Think about changing trust
                 if self._door['room_name'] in self._searched_rooms and self._goal_vic not in self._found_victims:
                     self._current_door = None
                     self._phase = Phase.FIND_NEXT_GOAL
 
                 # Enter the area and plan to search it
                 else:
+                    # TODO: Think about changing trust
                     self._state_tracker.update(state)
 
                     action = self._navigator.get_move_action(self._state_tracker)
@@ -563,12 +571,14 @@ class BaselineAgent(ArtificialBrain):
 
                             # Identify the exact location of the victim that was found by the human earlier
                             if vic in self._found_victims and 'location' not in self._found_victim_logs[vic].keys():
+                                # TODO: Think about increasing/decreasing trust based on if found_victim_logs room is same as current room
                                 self._recent_vic = vic
                                 # Add the exact victim location to the corresponding dictionary
                                 self._found_victim_logs[vic] = {'location': info['location'],
                                                                 'room': self._door['room_name'],
                                                                 'obj_id': info['obj_id']}
                                 if vic == self._goal_vic:
+                                    # TODO: add trust (if we do not already add trust after room comparison)
                                     # Communicate which victim was found
                                     self._send_message('Found ' + vic + ' in ' + self._door[
                                         'room_name'] + ' because you told me ' + vic + ' was located here.',
@@ -609,6 +619,7 @@ class BaselineAgent(ArtificialBrain):
                     return action, {}
 
                 # Communicate that the agent did not find the target victim in the area while the human previously communicated the victim was located here
+                # TODO: Decrease trust
                 if self._goal_vic in self._found_victims and self._goal_vic not in self._room_vics and \
                         self._found_victim_logs[self._goal_vic]['room'] == self._door['room_name']:
                     self._send_message(self._goal_vic + ' not present in ' + str(self._door[
@@ -698,6 +709,7 @@ class BaselineAgent(ArtificialBrain):
 
             if Phase.FOLLOW_PATH_TO_VICTIM == self._phase:
                 # Start searching for other victims if the human already rescued the target victim
+                # TODO: Think about increasing trust
                 if self._goal_vic and self._goal_vic in self._collected_victims:
                     self._phase = Phase.FIND_NEXT_GOAL
 
@@ -741,6 +753,7 @@ class BaselineAgent(ArtificialBrain):
                             self._moving = False
                             return None, {}
                 # Add the victim to the list of rescued victims when it has been picked up
+                # TODO: Maybe increase trust, as you are rescuing together
                 if len(objects) == 0 and 'critical' in self._goal_vic or len(
                         objects) == 0 and 'mild' in self._goal_vic and self._rescue == 'together':
                     self._waiting = False
