@@ -10,17 +10,21 @@ from loggers.OutputLogger import output_logger
 
 if __name__ == "__main__":
     fld = os.getcwd()
-    print("\nEnter one of the task types 'tutorial' or 'official':")
+    print("\nEnter one of the task types 'tutorial' or 'official' or 'baseline':")
     choice1=input()
     print("\nEnter a name or id for the human agent:")
     choice2=input()
     if choice1=='tutorial':
         builder = create_builder(task_type='tutorial',condition='tutorial', name=choice2, folder=fld)
     else:
+        trust_mode = None
+        if choice1 == "baseline":
+            print("\nEnter trust mode: 'always_lies' 'always_truth' 'random'")
+            trust_mode = input()
         print("\nEnter one of the human conditions 'normal', 'strong', or 'weak':")
         choice3=input()
         if choice3=='normal' or choice3=='strong' or choice3=='weak':
-            builder = create_builder(task_type=choice1, condition=choice3, name=choice2, folder=fld)
+            builder = create_builder(task_type=choice1, condition=choice3, name=choice2, folder=fld, trust_mode=trust_mode)
         else:
             print("\nWrong condition name entered")
 
