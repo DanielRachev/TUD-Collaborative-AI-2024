@@ -306,7 +306,7 @@ class BaselineAgent(ArtificialBrain):
                 if self._goal_vic \
                         and self._goal_vic in self._found_victims \
                         and self._door['room_name'] != self._found_victim_logs[self._goal_vic]['room']:
-                    self._trustBelief('search', 0.0, 0,1) # assume the person did not lie, if he did punish him later
+                    self._trustBelief('search', 0.0, 0.1) # assume the person did not lie, if he did punish him later
                     self._current_door = None
                     self._phase = Phase.FIND_NEXT_GOAL
 
