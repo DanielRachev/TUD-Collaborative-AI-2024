@@ -74,7 +74,7 @@ class BaselineAgent(ArtificialBrain):
         self._received_messages = []
         self._moving = False
         self._trusts = {}
-        self._loadBelief(self._folder)
+        self._loadBelief()
 
     def initialize(self):
         # Initialization of the state tracker and navigation algorithm
@@ -99,7 +99,6 @@ class BaselineAgent(ArtificialBrain):
                     self._received_messages.append(mssg.content)
         # Process messages from team members
         self._process_messages(state, self._team_members, self._condition)
-        self._trustBelief(self._folder, 'search', 0.1, -0.1)
 
         # Check whether human is close in distance
         if state[{'is_human_agent': True}]:
@@ -297,29 +296,28 @@ class BaselineAgent(ArtificialBrain):
 
             if Phase.FOLLOW_PATH_TO_ROOM == self._phase:
                 # Check if the previously identified target victim was rescued by the human
-                # TODO: Think about changing trust
                 if self._goal_vic and self._goal_vic in self._collected_victims:
                     # Reset current door and switch to finding the next goal
+                    self._trustBelief('rescue', 0.1, 0.1)
                     self._current_door = None
                     self._phase = Phase.FIND_NEXT_GOAL
 
                 # Check if the human found the previously identified target victim in a different room
-                # TODO: Think about changing trust
                 if self._goal_vic \
                         and self._goal_vic in self._found_victims \
                         and self._door['room_name'] != self._found_victim_logs[self._goal_vic]['room']:
+                    self._trustBelief('search', 0.0, 0.1) # assume the person did not lie, if he did punish him later
                     self._current_door = None
                     self._phase = Phase.FIND_NEXT_GOAL
 
                 # Check if the human already searched the previously identified area without finding the target victim
-                # TODO: Think about changing trust
                 if self._door['room_name'] in self._searched_rooms and self._goal_vic not in self._found_victims:
+                    self._trustBelief('search', 0.0, 0.1) # assume the person did not lie, if he did punish him later
                     self._current_door = None
                     self._phase = Phase.FIND_NEXT_GOAL
 
                 # Move to the next area to search
                 else:
-                    # TODO: Think about changing trust
                     # Update the state tracker with the current state
                     self._state_tracker.update(state)
 
@@ -507,27 +505,26 @@ class BaselineAgent(ArtificialBrain):
                 self._answered = False
 
                 # Check if the target victim has been rescued by the human, and switch to finding the next goal
-                # TODO: Think about changing trust
                 if self._goal_vic in self._collected_victims:
+                    self._trustBelief('rescue', 0.1, 0.1)
                     self._current_door = None
                     self._phase = Phase.FIND_NEXT_GOAL
 
                 # Check if the target victim is found in a different area, and start moving there
-                # TODO: Think about changing trust
                 if self._goal_vic in self._found_victims \
                         and self._door['room_name'] != self._found_victim_logs[self._goal_vic]['room']:
+                    self._trustBelief('search', 0.0, 0,1) # assume the person did not lie, if he did punish him later
                     self._current_door = None
                     self._phase = Phase.FIND_NEXT_GOAL
 
                 # Check if area already searched without finding the target victim, and plan to search another area
-                # TODO: Think about changing trust
                 if self._door['room_name'] in self._searched_rooms and self._goal_vic not in self._found_victims:
+                    self._trustBelief('search', 0.0, 0,1) # assume the person did not lie, if he did punish him later
                     self._current_door = None
                     self._phase = Phase.FIND_NEXT_GOAL
 
                 # Enter the area and plan to search it
                 else:
-                    # TODO: Think about changing trust
                     self._state_tracker.update(state)
 
                     action = self._navigator.get_move_action(self._state_tracker)
@@ -571,14 +568,17 @@ class BaselineAgent(ArtificialBrain):
 
                             # Identify the exact location of the victim that was found by the human earlier
                             if vic in self._found_victims and 'location' not in self._found_victim_logs[vic].keys():
-                                # TODO: Think about increasing/decreasing trust based on if found_victim_logs room is same as current room
+                                if self._found_victim_logs[vic]['room'] == self._door['room_name']:
+                                    self._trustBelief('search', 0.1, 0.1)
+                                else:
+                                    self._trustBelief('search', -0.2, -0.2)
+
                                 self._recent_vic = vic
                                 # Add the exact victim location to the corresponding dictionary
                                 self._found_victim_logs[vic] = {'location': info['location'],
                                                                 'room': self._door['room_name'],
                                                                 'obj_id': info['obj_id']}
                                 if vic == self._goal_vic:
-                                    # TODO: add trust (if we do not already add trust after room comparison)
                                     # Communicate which victim was found
                                     self._send_message('Found ' + vic + ' in ' + self._door[
                                         'room_name'] + ' because you told me ' + vic + ' was located here.',
@@ -619,9 +619,10 @@ class BaselineAgent(ArtificialBrain):
                     return action, {}
 
                 # Communicate that the agent did not find the target victim in the area while the human previously communicated the victim was located here
-                # TODO: Decrease trust
                 if self._goal_vic in self._found_victims and self._goal_vic not in self._room_vics and \
                         self._found_victim_logs[self._goal_vic]['room'] == self._door['room_name']:
+                    self._trustBelief('search', -0.2, -0.2)
+
                     self._send_message(self._goal_vic + ' not present in ' + str(self._door[
                                                                                     'room_name']) + ' because I searched the whole area without finding ' + self._goal_vic + '.',
                                       'RescueBot')
@@ -709,8 +710,8 @@ class BaselineAgent(ArtificialBrain):
 
             if Phase.FOLLOW_PATH_TO_VICTIM == self._phase:
                 # Start searching for other victims if the human already rescued the target victim
-                # TODO: Think about increasing trust
                 if self._goal_vic and self._goal_vic in self._collected_victims:
+                    self._trustBelief('rescue', 0.1, 0.1)
                     self._phase = Phase.FIND_NEXT_GOAL
 
                 # Move towards the location of the found victim
@@ -753,9 +754,9 @@ class BaselineAgent(ArtificialBrain):
                             self._moving = False
                             return None, {}
                 # Add the victim to the list of rescued victims when it has been picked up
-                # TODO: Maybe increase trust, as you are rescuing together
                 if len(objects) == 0 and 'critical' in self._goal_vic or len(
                         objects) == 0 and 'mild' in self._goal_vic and self._rescue == 'together':
+                    self._trustBelief('rescue', 0.0, 0.1)
                     self._waiting = False
                     if self._goal_vic not in self._collected_victims:
                         self._collected_victims.append(self._goal_vic)
@@ -917,7 +918,7 @@ class BaselineAgent(ArtificialBrain):
                                                    '14']:
                 self._human_loc = int(mssgs[-1].split()[-1])
 
-    def _loadBelief(self, folder):
+    def _loadBelief(self):
         '''
         Loads trust belief values if agent already collaborated with human before, otherwise trust belief values are initialized using default values.
         '''
@@ -926,7 +927,7 @@ class BaselineAgent(ArtificialBrain):
         trustfile_header = []
         trustfile_contents = []
         # Check if agent already collaborated with this human before, if yes: load the corresponding trust values, if no: initialize using default trust values
-        with open(folder + '/beliefs/allTrustBeliefs.csv') as csvfile:
+        with open(self._folder + '/beliefs/allTrustBeliefs.csv') as csvfile:
             reader = csv.reader(csvfile, delimiter=';', quotechar="'")
             for row in reader:
                 if trustfile_header == []:
@@ -954,7 +955,7 @@ class BaselineAgent(ArtificialBrain):
                 self._trusts[self._human_name]['search'] = {'competence': competence, 'willingness': willingness}
                 self._trusts[self._human_name]['rescue'] = {'competence': competence, 'willingness': willingness}
 
-    def _trustBelief(self, folder, task, competence_change=0, willingness_change=0):
+    def _trustBelief(self, task, competence_change=0, willingness_change=0):
         '''
         Baseline implementation of a trust belief. Creates a dictionary with trust belief scores for each team member, for example based on the received messages.
         '''
@@ -962,7 +963,7 @@ class BaselineAgent(ArtificialBrain):
         self._trusts[self._human_name][task]['willingness'] = np.clip(self._trusts[self._human_name][task]['willingness'] + willingness_change, -1, 1)
         
         # Save current trust belief values so we can later use and retrieve them to add to a csv file with all the logged trust belief values
-        with open(folder + '/beliefs/currentTrustBelief.csv', mode='w') as csv_file:
+        with open(self._folder + '/beliefs/currentTrustBelief.csv', mode='w') as csv_file:
             csv_writer = csv.writer(csv_file, delimiter=';', quotechar='"', quoting=csv.QUOTE_MINIMAL)
             csv_writer.writerow(['name', 'competence', 'willingness', 'task'])
             csv_writer.writerow([self._human_name, self._trusts[self._human_name]['search']['competence'],
