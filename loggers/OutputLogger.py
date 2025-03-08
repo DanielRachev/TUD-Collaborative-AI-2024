@@ -49,6 +49,12 @@ def output_logger(fld):
     name = trustfile_contents[-1]['name']
     competence = trustfile_contents[-1]['competence']
     willingness = trustfile_contents[-1]['willingness']
+    task = trustfile_contents[-1]['task']
+
+    name_2 = trustfile_contents[-2]['name']
+    competence_2 = trustfile_contents[-2]['competence']
+    willingness_2 = trustfile_contents[-2]['willingness']
+    task_2 = trustfile_contents[-2]['task']
     # Retrieve the number of ticks to finish the task, score, and completeness
     no_ticks = action_contents[-1]['tick_nr']
     score = action_contents[-1]['score']
@@ -61,4 +67,5 @@ def output_logger(fld):
         csv_writer.writerow([completeness,score,no_ticks,len(unique_agent_actions),len(unique_human_actions)])
     with open(fld + '/beliefs/allTrustBeliefs.csv', mode='a+') as csv_file:
         csv_writer = csv.writer(csv_file, delimiter=';', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-        csv_writer.writerow([name,competence,willingness])
+        csv_writer.writerow([name,competence,willingness,task])
+        csv_writer.writerow([name_2,competence_2,willingness_2,task_2])
