@@ -175,6 +175,3 @@ cython_debug/
 
 # VS Code
 .vscode/
-
-# Logs
-logs
