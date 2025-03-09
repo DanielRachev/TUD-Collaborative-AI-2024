@@ -1,1 +1,3 @@
-name;competence;willingness;task
+name;competence;willingness;task
+should_work;-0.20000000000000004;-0.20000000000000004;search
+should_work;0.0;0.1;rescue
