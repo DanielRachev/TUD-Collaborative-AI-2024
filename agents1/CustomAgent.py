@@ -1,5 +1,7 @@
 import random
 from agents1.OfficialAgent import BaselineAgent
+import numpy as np
+import csv
 
 class CustomBaselineAgent(BaselineAgent):
     def __init__(self, slowdown, condition, name, folder, trust_mode='random'):
