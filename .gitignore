@@ -175,3 +175,7 @@ cython_debug/
 
 # VS Code
 .vscode/
+
+temp.py
+test.py
+test2.py
