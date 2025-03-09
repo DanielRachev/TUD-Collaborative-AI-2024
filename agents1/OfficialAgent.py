@@ -189,6 +189,7 @@ class BaselineAgent(ArtificialBrain):
                 
                 if len(remaining_vics) > 0 and len(self._searched_rooms + self._reported_rooms) == 14:
                     self._trustBelief('search', -0.2, 0.0)
+                    self._send_message('I have reduced my trust in your search competence because there are still victims remaining and all rooms have been searched.', 'RescueBot')
 
                 # Check which victims can be rescued next because human or agent already found them
                 for vic in remaining_vics:
@@ -337,6 +338,7 @@ class BaselineAgent(ArtificialBrain):
                 if self._goal_vic and self._goal_vic in self._collected_victims:
                     # Reset current door and switch to finding the next goal
                     self._trustBelief('rescue', 0.1, 0.1)
+                    self._send_message('I have increased my trust in your rescue competence and willingness because you successfully rescued the previously identified victim.', 'RescueBot')
                     self._current_door = None
                     self._phase = Phase.FIND_NEXT_GOAL
 
@@ -346,6 +348,7 @@ class BaselineAgent(ArtificialBrain):
                         and self._door['room_name'] != self._found_victim_logs[self._goal_vic]['room'] \
                         and search_trust >= 0.0:
                     self._trustBelief('search', 0.0, 0.1) # assume the person did not lie, if he did punish him later
+                    self._send_message('I have increased my trust in your search willingness because you reported the victim, but it was in a different room.', 'RescueBot')
                     self._current_door = None
                     self._phase = Phase.FIND_NEXT_GOAL
 
@@ -353,6 +356,7 @@ class BaselineAgent(ArtificialBrain):
                 if (self._door['room_name'] in self._searched_rooms or self._door['room_name'] in self._reported_rooms and search_trust >= 0.0) \
                         and self._goal_vic not in self._found_victims:
                     self._trustBelief('search', 0.0, 0.1) # assume the person did not lie, if he did punish him later
+                    self._send_message('I have increased my trust in your search willingness because you reported the room as searched.', 'RescueBot')
                     self._current_door = None
                     self._phase = Phase.FIND_NEXT_GOAL
 
@@ -432,6 +436,7 @@ class BaselineAgent(ArtificialBrain):
 
                             if self._waiting and time.time() - self._waiting_since > 30:
                                 self._trustBelief('search', -0.1, -0.1)
+                                self._send_message('I have reduced my trust in your search competence and willingness because you took too long to respond.', 'RescueBot')
 
                             self._waiting = False
                             # Add area to the to do list
@@ -474,6 +479,7 @@ class BaselineAgent(ArtificialBrain):
 
                                 if self._waiting and time.time() - self._waiting_since > 30:
                                     self._trustBelief('search', -0.1, -0.1)
+                                    self._send_message('I have reduced my trust in your search competence and willingness because you took too long to respond.', 'RescueBot')
 
                                 self._waiting = False
                                 self._send_message('Removing tree blocking ' + str(self._door['room_name']) + '.',
@@ -491,6 +497,7 @@ class BaselineAgent(ArtificialBrain):
 
                             if self._waiting and time.time() - self._waiting_since > 30:
                                 self._trustBelief('search', -0.1, -0.1)
+                                self._send_message('I have reduced my trust in your search competence and willingness because you took too long to respond.', 'RescueBot')
 
                             self._waiting = False
                             # Add area to the to do list
@@ -504,6 +511,7 @@ class BaselineAgent(ArtificialBrain):
 
                                 if self._waiting and time.time() - self._waiting_since > 30:
                                     self._trustBelief('search', -0.1, -0.1)
+                                    self._send_message('I have reduced my trust in your search competence and willingness because you took too long to respond.', 'RescueBot')
 
                                 self._waiting = False
                                 self._send_message('Removing tree blocking ' + str(self._door['room_name']) + '.',
@@ -536,6 +544,7 @@ class BaselineAgent(ArtificialBrain):
 
                             if self._waiting and time.time() - self._waiting_since > 30:
                                 self._trustBelief('search', -0.1, -0.1)
+                                self._send_message('I have reduced my trust in your search competence and willingness because you took too long to respond.', 'RescueBot')
 
                             self._waiting = False
                             self._send_message('Removing stones blocking ' + str(self._door['room_name']) + '.',
@@ -550,6 +559,7 @@ class BaselineAgent(ArtificialBrain):
 
                             if self._waiting and time.time() - self._waiting_since > 30:
                                 self._trustBelief('search', -0.1, -0.1)
+                                self._send_message('I have reduced my trust in your search competence and willingness because you took too long to respond.', 'RescueBot')
 
                             self._waiting = False
                             # Add area to the to do list
@@ -562,6 +572,7 @@ class BaselineAgent(ArtificialBrain):
 
                             if self._waiting and time.time() - self._waiting_since > 30:
                                 self._trustBelief('search', -0.1, -0.1)
+                                self._send_message('I have reduced my trust in your search competence and willingness because you took too long to respond.', 'RescueBot')
 
                             self._waiting = False
                             self._send_message('Removing stones blocking ' + str(self._door['room_name']) + '.',
@@ -595,6 +606,7 @@ class BaselineAgent(ArtificialBrain):
 
                     if self._waiting and time.time() - self._waiting_since > 30:
                         self._trustBelief('search', -0.1, -0.1)
+                        self._send_message('I have reduced my trust in your search competence and willingness because you took too long to respond.', 'RescueBot')
 
                     self._waiting = False
                     self._phase = Phase.ENTER_ROOM
@@ -608,6 +620,7 @@ class BaselineAgent(ArtificialBrain):
                 # Check if the target victim has been rescued by the human, and switch to finding the next goal
                 if self._goal_vic in self._collected_victims:
                     self._trustBelief('rescue', 0.1, 0.1)
+                    self._send_message('I have increased my trust in your rescue competence and willingness because you successfully rescued the target victim.', 'RescueBot')
                     self._current_door = None
                     self._phase = Phase.FIND_NEXT_GOAL
 
@@ -615,6 +628,7 @@ class BaselineAgent(ArtificialBrain):
                 if self._goal_vic in self._found_victims \
                         and self._door['room_name'] != self._found_victim_logs[self._goal_vic]['room'] and search_trust >= 0.0:
                     self._trustBelief('search', 0.0, 0.1) # assume the person did not lie, if he did punish him later
+                    self._send_message('I have increased my trust in your search willingness because you reported the victim, but it was in a different room.', 'RescueBot')
                     self._current_door = None
                     self._phase = Phase.FIND_NEXT_GOAL
 
@@ -622,6 +636,7 @@ class BaselineAgent(ArtificialBrain):
                 if (self._door['room_name'] in self._searched_rooms or self._door['room_name'] in self._reported_rooms and search_trust >= 0.0) \
                         and self._goal_vic not in self._found_victims:
                     self._trustBelief('search', 0.0, 0.1) # assume the person did not lie, if he did punish him later
+                    self._send_message('I have increased my trust in your search willingness because you reported the room as searched.', 'RescueBot')
                     self._current_door = None
                     self._phase = Phase.FIND_NEXT_GOAL
 
@@ -676,8 +691,10 @@ class BaselineAgent(ArtificialBrain):
                             if vic in self._found_victims and 'location' not in self._found_victim_logs[vic].keys():
                                 if self._found_victim_logs[vic]['room'] == self._door['room_name']:
                                     self._trustBelief('search', 0.1, 0.1)
+                                    self._send_message('I have increasd my trust in your search competence and willingness because reported the victim correctly.', 'RescueBot')
                                 else:
                                     self._trustBelief('search', -0.2, -0.2)
+                                    self._send_message('I have reduced my trust in your search competence and willingness because you reported the wrong information about the victim.', 'RescueBot')
 
                                 self._recent_vic = vic
                                 # Add the exact victim location to the corresponding dictionary
@@ -741,6 +758,7 @@ class BaselineAgent(ArtificialBrain):
                 if self._goal_vic in self._found_victims and self._goal_vic not in self._room_vics and \
                         self._found_victim_logs[self._goal_vic]['room'] == self._door['room_name']:
                     self._trustBelief('search', -0.2, -0.2)
+                    self._send_message('I have reduced my trust in your search competence and willingness because the victim you reported is not present in the specified room.', 'RescueBot')
 
                     self._send_message(self._goal_vic + ' not present in ' + str(self._door[
                                                                                     'room_name']) + ' because I searched the whole area without finding ' + self._goal_vic + '.',
@@ -763,7 +781,7 @@ class BaselineAgent(ArtificialBrain):
 
                     if self._waiting and time.time() - self._waiting_since > 60:
                         self._trustBelief('rescue', -0.1, -0.1)
-
+                        self._send_message('I have reduced my trust in your rescue competence and willingness because you took too long to respond.', 'RescueBot')
                     self._waiting = False
                     # Tell the human to come over and help carry the critically injured victim
                     if not state[{'is_human_agent': True}]:
@@ -785,6 +803,7 @@ class BaselineAgent(ArtificialBrain):
 
                     if self._waiting and time.time() - self._waiting_since > 60:
                         self._trustBelief('rescue', -0.1, -0.1)
+                        self._send_message('I have reduced my trust in your rescue competence and willingness because you took too long to respond.', 'RescueBot')
 
                     self._waiting = False
                     # Tell the human to come over and help carry the mildly injured victim
@@ -809,6 +828,7 @@ class BaselineAgent(ArtificialBrain):
 
                     if self._waiting and time.time() - self._waiting_since > 60:
                         self._trustBelief('rescue', -0.1, -0.1)
+                        self._send_message('I have reduced my trust in your rescue competence and willingness because you took too long to respond.', 'RescueBot')
 
                     self._waiting = False
                     self._goal_vic = self._recent_vic
@@ -819,11 +839,13 @@ class BaselineAgent(ArtificialBrain):
                 if self.received_messages_content and self.received_messages_content[-1] == 'Continue':
                     if 'critical' in self._recent_vic:
                         self._trustBelief('rescue', -0.1, -0.1)
+                        self._send_message('I have reduced my trust in your rescue competence and willingness because you decided to continue searching instead of rescuing a critical victim.', 'RescueBot')
 
                     self._answered = True
 
                     if self._waiting and time.time() - self._waiting_since > 60:
                         self._trustBelief('rescue', -0.1, -0.1)
+                        self._send_message('I have reduced my trust in your rescue competence and willingness because you took too long to respond.', 'RescueBot')
 
                     self._waiting = False
                     self._todo.append(self._recent_vic)
@@ -852,6 +874,7 @@ class BaselineAgent(ArtificialBrain):
                 # Start searching for other victims if the human already rescued the target victim
                 if self._goal_vic and self._goal_vic in self._collected_victims:
                     self._trustBelief('rescue', 0.1, 0.1)
+                    self._send_message('I have increased my trust in your rescue competence and willingness because you successfully rescued the victim.', 'RescueBot')
                     self._phase = Phase.FIND_NEXT_GOAL
 
                 # Move towards the location of the found victim
@@ -899,9 +922,11 @@ class BaselineAgent(ArtificialBrain):
                 if len(objects) == 0 and 'critical' in self._goal_vic or len(
                         objects) == 0 and 'mild' in self._goal_vic and self._rescue == 'together':
                     self._trustBelief('rescue', 0.0, 0.1)
+                    self._send_message('I have increased my trust in your search willingness because you said we will rescue the victim together.', 'RescueBot')
 
                     if self._waiting and time.time() - self._waiting_since > 60:
                         self._trustBelief('rescue', -0.1, -0.1)
+                        self._send_message('I have reduced my trust in your rescue competence and willingness because you took too long to respond.', 'RescueBot')
 
                     self._waiting = False
 
@@ -991,6 +1016,7 @@ class BaselineAgent(ArtificialBrain):
                         self._reported_rooms.append(area)
                     else:
                         self._trustBelief('search', -0.1, -0.1)
+                        self._send_message('I have reduced my trust in your search competence and willingness because you reported searching an area that was already cleared.', 'RescueBot')
                     self._seen_messages.add(msg_obj.message_id)
 
                 # If a received message involves team members finding victims, add these victims and their locations to memory
@@ -1059,6 +1085,7 @@ class BaselineAgent(ArtificialBrain):
 
                         if self._waiting and time.time() - self._waiting_since > 60:
                             self._trustBelief('rescue', -0.1, -0.1)
+                            self._send_message('I have reduced my trust in your rescue competence and willingness because you took too long to respond.', 'RescueBot')
                         
                         self._waiting = False
 
