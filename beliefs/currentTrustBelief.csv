@@ -1,3 +1,6 @@
-name;competence;willingness;task
-alice;0.41663828277097614;0.0774783047518961;search
-alice;0.41663828277097614;0.0774783047518961;rescue
+name;competence;willingness;task
+
+ben;-1;-1;search
+
+ben;-1;-1;rescue
+
