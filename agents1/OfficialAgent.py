@@ -73,6 +73,8 @@ class BaselineAgent(ArtificialBrain):
         self._recent_vic = None
         self._received_messages = []
         self._moving = False
+        # Initialize event log for data collection
+        self._event_log = []
 
     def initialize(self):
         # Initialization of the state tracker and navigation algorithm
@@ -97,9 +99,16 @@ class BaselineAgent(ArtificialBrain):
                     self._received_messages.append(mssg.content)
         # Process messages from team members
         self._process_messages(state, self._team_members, self._condition)
+        # Log each received human message with the current tick count
+        current_tick = state['World']['nr_ticks']
+        for mssg in self.received_messages:
+            self._log_event("message", mssg.content, current_tick)
         # Initialize and update trust beliefs for team members
         trustBeliefs = self._loadBelief(self._team_members, self._folder)
-        self._trustBelief(self._team_members, trustBeliefs, self._folder, self._received_messages)
+        trustBeliefs = self._trustBelief(self._team_members, trustBeliefs, self._folder, self._received_messages)
+        # Evaluate human trust: high if both competence and willingness exceed 0.7
+        human_trust = trustBeliefs[self._human_name]
+        high_trust = (human_trust['competence'] > 0.7 and human_trust['willingness'] > 0.7)
 
         # Check whether human is close in distance
         if state[{'is_human_agent': True}]:
@@ -200,15 +209,19 @@ class BaselineAgent(ArtificialBrain):
                             self._phase = Phase.PLAN_PATH_TO_ROOM
                             return Idle.__name__, {'duration_in_ticks': 25}
                     # Define a previously found victim as target victim
+                    # Define a previously found victim as target victim
                     if vic in self._found_victims and vic not in self._todo:
                         self._goal_vic = vic
                         self._goal_loc = remaining[vic]
-                        # Rescue together when victim is critical or when the human is weak and the victim is mildly injured
-                        if 'critical' in vic or 'mild' in vic and self._condition == 'weak':
+                        # For critical victims or when human condition is weak, always rescue together.
+                        if 'critical' in vic or ('mild' in vic and self._condition == 'weak'):
                             self._rescue = 'together'
-                        # Rescue alone if the victim is mildly injured and the human not weak
+                        # For mildly injured victims (and human not weak), decide based on trust.
                         if 'mild' in vic and self._condition != 'weak':
-                            self._rescue = 'alone'
+                            if high_trust:
+                                self._rescue = 'together'
+                            else:
+                                self._rescue = 'alone'
                         # Plan path to victim because the exact location is known (i.e., the agent found this victim)
                         if 'location' in self._found_victim_logs[vic].keys():
                             self._phase = Phase.PLAN_PATH_TO_VICTIM
@@ -388,11 +401,11 @@ class BaselineAgent(ArtificialBrain):
                             self._to_search.append(self._door['room_name'])
                             self._phase = Phase.FIND_NEXT_GOAL
                         # Wait for the human to help removing the obstacle and remove the obstacle together
-                        if self.received_messages_content and self.received_messages_content[
-                            -1] == 'Remove' or self._remove:
+                        if self.received_messages_content and self.received_messages_content[-1] == 'Remove' or self._remove:
                             if not self._remove:
                                 self._answered = True
-                            # Tell the human to come over and be idle untill human arrives
+                            self._log_event("obstacle_removal_response", "Remove rock", state['World']['nr_ticks'])
+                            # Tell the human to come over and be idle until human arrives
                             if not state[{'is_human_agent': True}]:
                                 self._send_message('Please come to ' + str(self._door['room_name']) + ' to remove rock.',
                                                   'RescueBot')
@@ -741,12 +754,12 @@ class BaselineAgent(ArtificialBrain):
                             self._moving = False
                             return None, {}
                 # Add the victim to the list of rescued victims when it has been picked up
-                if len(objects) == 0 and 'critical' in self._goal_vic or len(
-                        objects) == 0 and 'mild' in self._goal_vic and self._rescue == 'together':
+                if len(objects) == 0 and ('critical' in self._goal_vic or ('mild' in self._goal_vic and self._rescue == 'together')):
                     self._waiting = False
                     if self._goal_vic not in self._collected_victims:
                         self._collected_victims.append(self._goal_vic)
                     self._carrying_together = True
+                    self._log_event("rescue_attempt_joint", self._goal_vic, state['World']['nr_ticks'])
                     # Determine the next victim to rescue or search
                     self._phase = Phase.FIND_NEXT_GOAL
                 # When rescuing mildly injured victims alone, pick the victim up and plan the path to the drop zone
@@ -755,6 +768,7 @@ class BaselineAgent(ArtificialBrain):
                     if self._goal_vic not in self._collected_victims:
                         self._collected_victims.append(self._goal_vic)
                     self._carrying = True
+                    self._log_event("rescue_attempt_solo", self._goal_vic, state['World']['nr_ticks'])
                     return CarryObject.__name__, {'object_id': self._found_victim_logs[self._goal_vic]['obj_id'],
                                                   'human_name': self._human_name}
 
@@ -915,43 +929,59 @@ class BaselineAgent(ArtificialBrain):
         trustfile_header = []
         trustfile_contents = []
         # Check if agent already collaborated with this human before, if yes: load the corresponding trust values, if no: initialize using default trust values
+        # Load previous trust beliefs from CSV for persistence between sessions.
         with open(folder + '/beliefs/allTrustBeliefs.csv') as csvfile:
             reader = csv.reader(csvfile, delimiter=';', quotechar="'")
             for row in reader:
-                if trustfile_header == []:
+                if not trustfile_header:
                     trustfile_header = row
                     continue
-                # Retrieve trust values 
                 if row and row[0] == self._human_name:
                     name = row[0]
                     competence = float(row[1])
                     willingness = float(row[2])
-                    trustBeliefs[name] = {'competence': competence, 'willingness': willingness}
-                # Initialize default trust values
-                if row and row[0] != self._human_name:
+                    reliability = float(row[3]) if len(row) > 3 else default
+                    trustBeliefs[name] = {'competence': competence, 'willingness': willingness, 'reliability': reliability}
+                elif row and row[0] != self._human_name:
                     competence = default
                     willingness = default
-                    trustBeliefs[self._human_name] = {'competence': competence, 'willingness': willingness}
+                    reliability = default
+                    trustBeliefs[self._human_name] = {'competence': competence, 'willingness': willingness, 'reliability': reliability}
         return trustBeliefs
 
     def _trustBelief(self, members, trustBeliefs, folder, receivedMessages):
         '''
         Baseline implementation of a trust belief. Creates a dictionary with trust belief scores for each team member, for example based on the received messages.
         '''
-        # Update the trust value based on for example the received messages
+        # Weighted trust updates based on observed events.
         for message in receivedMessages:
-            # Increase agent trust in a team member that rescued a victim
+            # Positive Event: Successful rescue increases competence.
             if 'Collect' in message:
                 trustBeliefs[self._human_name]['competence'] += 0.10
-                # Restrict the competence belief to a range of -1 to 1
-                trustBeliefs[self._human_name]['competence'] = np.clip(trustBeliefs[self._human_name]['competence'], -1,
-                                                                       1)
-        # Save current trust belief values so we can later use and retrieve them to add to a csv file with all the logged trust belief values
+    
+            # Positive Event: Timely response increases willingness.
+            if 'Response' in message:
+                trustBeliefs[self._human_name]['willingness'] += 0.05
+    
+            # Negative Event: Delay in assistance decreases willingness.
+            if 'Delay' in message:
+                trustBeliefs[self._human_name]['willingness'] -= 0.05
+    
+        # Apply decay to slowly revert trust values towards neutral (0.5).
+        decay_rate = 0.01
+        neutral = 0.5
+        trustBeliefs[self._human_name]['competence'] = np.clip(
+            trustBeliefs[self._human_name]['competence'] * (1 - decay_rate) + decay_rate * neutral, -1, 1)
+        trustBeliefs[self._human_name]['willingness'] = np.clip(
+            trustBeliefs[self._human_name]['willingness'] * (1 - decay_rate) + decay_rate * neutral, -1, 1)
+        # Save updated trust values for persistence across missions.
         with open(folder + '/beliefs/currentTrustBelief.csv', mode='w') as csv_file:
             csv_writer = csv.writer(csv_file, delimiter=';', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-            csv_writer.writerow(['name', 'competence', 'willingness'])
-            csv_writer.writerow([self._human_name, trustBeliefs[self._human_name]['competence'],
-                                 trustBeliefs[self._human_name]['willingness']])
+            csv_writer.writerow(['name', 'competence', 'willingness', 'reliability'])
+            csv_writer.writerow([self._human_name,
+                                 trustBeliefs[self._human_name]['competence'],
+                                 trustBeliefs[self._human_name]['willingness'],
+                                 trustBeliefs[self._human_name]['reliability']])
 
         return trustBeliefs
 
@@ -1002,3 +1032,10 @@ class BaselineAgent(ArtificialBrain):
             else:
                 locs.append((x[i], max(y)))
         return locs
+    
+    def _log_event(self, event_type, details, tick):
+        """
+        Log an event with its type, details, and the current tick count.
+        """
+        self._event_log.append({"event_type": event_type, "details": details, "tick": tick})
+ 
