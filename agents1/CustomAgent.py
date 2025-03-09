@@ -14,14 +14,23 @@ class CustomBaselineAgent(BaselineAgent):
         elif self.trust_mode == 'always_truth':
             value = 1
         elif self.trust_mode == 'random':
-            value = random.choice([-1, 1])
+            sign1 = random.choice([-1, 1])
+            sign2 = random.choice([-1, 1])
+            value1 = random.random() * sign1
+            value2 = random.random() * sign2
         else:
             value = random.choice([-1, 1])
 
-        self._trusts[self._human_name] = {
-            'search': {'competence': value, 'willingness': value},
-            'rescue': {'competence': value, 'willingness': value}
-        }
+        if self.trust_mode == 'random':
+            self._trusts[self._human_name] = {
+                'search': {'competence': value1, 'willingness': value2},
+                'rescue': {'competence': value1, 'willingness': value2}
+            }
+        else:
+            self._trusts[self._human_name] = {
+                'search': {'competence': value, 'willingness': value},
+                'rescue': {'competence': value, 'willingness': value}
+            }
     
     def _trustBelief(self, task, competence_change=0, willingness_change=0):
         '''
