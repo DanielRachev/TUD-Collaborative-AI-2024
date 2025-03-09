@@ -1,5 +1,6 @@
 name;competence;willingness;task
 <<<<<<< HEAD
+<<<<<<< HEAD
 
 ben;0;-0.3;rescue
 
@@ -9,3 +10,5 @@ ben;-1.0;-1.0;search
 Charlie;-0.2;0.4;rescue
 Charlie;-0.6;-0.5;search
 >>>>>>> 63bdfeb... Charlie official
+=======
+>>>>>>> 8ecb4b5... Charlie random
