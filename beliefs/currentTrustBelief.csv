@@ -1,5 +1,3 @@
-name;competence;willingness;task
-
-ben;1;1;search
-
-ben;1;1;rescue
+name;competence;willingness;task
+ben;-0.4355913776423799;-0.5412981101297395;search
+ben;-0.4355913776423799;-0.5412981101297395;rescue
