@@ -1,14 +1,13 @@
 name;competence;willingness;task
-<<<<<<< HEAD
-<<<<<<< HEAD
+
+alice;0.41663828277097614;0.0774783047518961;search
+
+alice;0.41663828277097614;0.0774783047518961;rescue
 
 ben;0;-0.3;rescue
 
 ben;-1.0;-1.0;search
 
-=======
 Charlie;-0.2;0.4;rescue
+
 Charlie;-0.6;-0.5;search
->>>>>>> 63bdfeb... Charlie official
-=======
->>>>>>> 8ecb4b5... Charlie random
