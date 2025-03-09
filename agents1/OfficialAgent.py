@@ -346,7 +346,7 @@ class BaselineAgent(ArtificialBrain):
                 if self._goal_vic \
                         and self._goal_vic in self._found_victims \
                         and self._door['room_name'] != self._found_victim_logs[self._goal_vic]['room'] \
-                        and search_trust >= 0.0:
+                        and (search_trust >= 0.0 or self._trusts[self._human_name]['search']['competence'] > -0.7):
                     self._trustBelief('search', 0.0, 0.1) # assume the person did not lie, if he did punish him later
                     self._send_message('I have increased my trust in your search willingness because you reported the victim, but it was in a different room.', 'RescueBot')
                     self._current_door = None
@@ -434,7 +434,7 @@ class BaselineAgent(ArtificialBrain):
                             -1] == 'Continue' and not self._remove:
                             self._answered = True
 
-                            if self._waiting and time.time() - self._waiting_since > 30:
+                            if self._waiting and time.time() - self._waiting_since > 60:
                                 self._trustBelief('search', -0.1, -0.1)
                                 self._send_message('I have reduced my trust in your search competence and willingness because you took too long to respond.', 'RescueBot')
 
@@ -477,7 +477,7 @@ class BaselineAgent(ArtificialBrain):
                             if not self._remove:
                                 self._answered = True
 
-                                if self._waiting and time.time() - self._waiting_since > 30:
+                                if self._waiting and time.time() - self._waiting_since > 60:
                                     self._trustBelief('search', -0.1, -0.1)
                                     self._send_message('I have reduced my trust in your search competence and willingness because you took too long to respond.', 'RescueBot')
 
@@ -495,7 +495,7 @@ class BaselineAgent(ArtificialBrain):
                             -1] == 'Continue' and not self._remove:
                             self._answered = True
 
-                            if self._waiting and time.time() - self._waiting_since > 30:
+                            if self._waiting and time.time() - self._waiting_since > 60:
                                 self._trustBelief('search', -0.1, -0.1)
                                 self._send_message('I have reduced my trust in your search competence and willingness because you took too long to respond.', 'RescueBot')
 
@@ -509,7 +509,7 @@ class BaselineAgent(ArtificialBrain):
                             if not self._remove:
                                 self._answered = True
 
-                                if self._waiting and time.time() - self._waiting_since > 30:
+                                if self._waiting and time.time() - self._waiting_since > 60:
                                     self._trustBelief('search', -0.1, -0.1)
                                     self._send_message('I have reduced my trust in your search competence and willingness because you took too long to respond.', 'RescueBot')
 
@@ -542,7 +542,7 @@ class BaselineAgent(ArtificialBrain):
                         if self._answered == False and not self._remove and not self._waiting and search_trust < 0.0:
                             self._answered = True
 
-                            if self._waiting and time.time() - self._waiting_since > 30:
+                            if self._waiting and time.time() - self._waiting_since > 60:
                                 self._trustBelief('search', -0.1, -0.1)
                                 self._send_message('I have reduced my trust in your search competence and willingness because you took too long to respond.', 'RescueBot')
 
@@ -557,7 +557,7 @@ class BaselineAgent(ArtificialBrain):
                             -1] == 'Continue' and not self._remove:
                             self._answered = True
 
-                            if self._waiting and time.time() - self._waiting_since > 30:
+                            if self._waiting and time.time() - self._waiting_since > 60:
                                 self._trustBelief('search', -0.1, -0.1)
                                 self._send_message('I have reduced my trust in your search competence and willingness because you took too long to respond.', 'RescueBot')
 
@@ -570,7 +570,7 @@ class BaselineAgent(ArtificialBrain):
                             -1] == 'Remove alone' and not self._remove:
                             self._answered = True
 
-                            if self._waiting and time.time() - self._waiting_since > 30:
+                            if self._waiting and time.time() - self._waiting_since > 60:
                                 self._trustBelief('search', -0.1, -0.1)
                                 self._send_message('I have reduced my trust in your search competence and willingness because you took too long to respond.', 'RescueBot')
 
@@ -604,7 +604,7 @@ class BaselineAgent(ArtificialBrain):
                     self._answered = False
                     self._remove = False
 
-                    if self._waiting and time.time() - self._waiting_since > 30:
+                    if self._waiting and time.time() - self._waiting_since > 60:
                         self._trustBelief('search', -0.1, -0.1)
                         self._send_message('I have reduced my trust in your search competence and willingness because you took too long to respond.', 'RescueBot')
 
